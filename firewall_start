@@ -1,0 +1,10 @@
+#!/bin/bash
+
+##
+# firewallstart
+#
+# Script para setear las reglas de nuestro firewall
+#
+
+# limpiamos el firewall con el script anterior
+./firewallreset
