@@ -1,0 +1,29 @@
+#!/bin/bash
+##
+# fwreset
+#
+# Dejamos iptables limpio. Todas las conexiones son aceptadas. 
+#
+
+# limpiar todas las cadenas de nat
+iptables -t nat --flush
+
+# las politicas de filter
+iptables -t filter --policy INPUT ACCEPT
+iptables -t filter --policy FORWARD ACCEPT
+iptables -t filter --policy OUTPUT ACCEPT
+
+# limpiar las reglas
+iptables -t filter --flush INPUT
+iptables -t filter --flush FORWARD 
+iptables -t filter --flush OUTPUT 
+
+# FLOOD es una regla nuestra para impedir que nos hagan un DDOS
+# es muy comun por eso la eliminamos
+iptables -t filter --flush FLOOD
+iptables -t filter --delete-chain FLOOD
+
+# seteamos en false la opcion del kernel que controla la redireccion
+# de una interfaz a otra (ej: eth0 a wlan0)
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
