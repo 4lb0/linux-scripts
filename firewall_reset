@@ -1,6 +1,6 @@
 #!/bin/bash
 ##
-# fwreset
+# firewall_reset
 #
 # Dejamos iptables limpio. Todas las conexiones son aceptadas. 
 #

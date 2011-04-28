@@ -1,10 +1,55 @@
 #!/bin/bash
 
 ##
-# firewallstart
+# firewall_start
 #
 # Script para setear las reglas de nuestro firewall
 #
 
 # limpiamos el firewall con el script anterior
-./firewallreset
+./firewall_reset
+
+# Por defecto dropeamos los paquetes
+iptables -t filter --policy INPUT DROP
+
+##
+# Cadena FLOOD para evitar los DDOS
+#
+
+# creo la cadena
+iptables -t filter --new-chain FLOOD
+# 
+iptables -t filter --append FLOOD -m limit --limit 2/second \
+          --limit-burst 5 -j RETURN
+# dropeo!
+iptables -t filter --append FLOOD -j DROP
+
+##
+# Reglas
+#
+
+# no aceptar paquetes que vengan de PPP0 (usualmente ADSL)
+iptables -t filter --append INPUT -i ! ppp0 -j ACCEPT
+
+# aceptar paquetes que vengan con el estado ESTABLISHED o RELATED
+iptables -t filter --append INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Supongamos que tenemos un servidor web que queremos que sea publico
+# una regla podria ser la siguiente
+#
+# iptables -t filter -A input -i ppp0 -p tcp --dport 80 -j ACCEPT
+#
+# pero es muy permisiva, estamos dejando al servidor con todo el trafico
+
+# en vez de aceptar, llamamos a la cadena FLOOD, ahi tenemos las reglas
+# para prevenir el DDOS
+iptables -t filter -A INPUT -i ppp0 -p tcp --dport 80 -j FLOOD
+# ahora si aceptamos los paquetes
+iptables -t filter -A INPUT -i ppp0 -p tcp --dport 80 -j ACCEPT
+
+# ahora pongo el FLOOD para todas las conexiones 
+iptables -t filter -A INPUT -j FLOOD
+
+# supongamos que alguien esta buscando si tenemos algun puerto abierto
+# en vez de dropear el paquete vamos a enviarle un error de rechazo
+iptables -t filter -A INPUT -p tcp -j REJECT --reject-with icmp-port-unreachable
