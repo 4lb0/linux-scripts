@@ -29,7 +29,7 @@ iptables -t filter --append FLOOD -j DROP
 #
 
 # no aceptar paquetes que vengan de PPP0 (usualmente ADSL)
-iptables -t filter --append INPUT -i ! ppp0 -j ACCEPT
+iptables -t filter --append INPUT ! -i ppp0 -j ACCEPT
 
 # aceptar paquetes que vengan con el estado ESTABLISHED o RELATED
 iptables -t filter --append INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
@@ -53,3 +53,23 @@ iptables -t filter -A INPUT -j FLOOD
 # supongamos que alguien esta buscando si tenemos algun puerto abierto
 # en vez de dropear el paquete vamos a enviarle un error de rechazo
 iptables -t filter -A INPUT -p tcp -j REJECT --reject-with icmp-port-unreachable
+
+# todo lo que venga de FORDWARD de afuera, esta regla es optativa
+iptables -A FORWARD -i ppp0 -m state --state NEW,INVALID -j DROP
+
+# estos parametros estan bien explicados en http://tldp.org/LDP/LG/issue77/lechnyr.html
+# son configuraciones viejas de linux que pueden ser explotadas
+echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+echo "0" > /proc/sys/net/ipv4/conf/all/accept_source_route
+echo "0" > /proc/sys/net/ipv4/conf/all/accept_redirects
+echo "1" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+
+##
+# Nateos
+#
+
+# todo lo que sale por ppp0 (hacia afuera de la red) va a salir con la IP de ppp0
+iptables -t nat -A POSTROUTING -o ppp0 -j MASQUERADE
+
+# Habilitamos el forward de una interfaz a otra (ej. de eth1 a pp0)
+echo "1" > /proc/sys/net/ipv4/ip_forward
